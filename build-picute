@@ -1,0 +1,142 @@
+#!/bin/bash
+#
+#  QT5 main build script
+#
+#  Start this script under a shell multiplexer (i.e. screen)
+#
+#  $ ./build-picute <configs/myconfiguration> <developer | runtime> > build.log 2>&1
+#
+#  And follow the progress from another shell (tail -f build.log)
+#
+
+set -e
+
+echo "build-picute - Build QT5 for the RaspberryPI"
+
+if [ ! -f "$1" ]; then
+    echo "Syntax: build-picute <configs/profile_filename> <developer | runtime> [configure]"
+    exit 1
+fi
+
+build_mode=$2
+if [ "$build_mode" != "developer" ] && [ "$build_mode" != "runtime" ]; then
+    echo "Mode must be 'developer' or 'runtime'"
+    exit 1
+else
+    # Swallow the configuration profile - will exit immed if not ok (set -e)
+    source $1
+    echo "Output picute image: $RPIMAGE_TARGET"
+fi
+
+# Passing "configure" will only run the "configure" script then stop
+is_configure=$3
+
+# Collect configure parameters depending on "runtime" or "developer"
+confopts="configure_opts_$build_mode"
+echo "Configure options: ${!confopts}"
+
+# will pass these variables to the guest script
+LC_LOCALES=LC_ALL=C LANGUAGE=C LANG=C
+
+# download and extract the raspberry pi image
+if [ ! -f $RPIMAGE_TARGET ]; then
+    echo ">>> downloading image: $RPIMAGE_SOURCE"
+    curl -sS $RPIMAGE_SOURCE | gunzip - -c > $RPIMAGE_TARGET
+fi
+
+# mount it
+if [ ! -f $MOUNTP/etc/debian_version ]; then
+    echo ">>> Mounting image: $RPIMAGE_TARGET"
+    ./imgmount mount $MOUNTP $NBD $RPIMAGE_TARGET
+else
+    echo ">>> Image is already mounted at: $MOUNTP, great!"
+fi
+
+# Fix relative paths to guest os libraries needed for linking binaries
+# this is only needed when cross compiling
+if [ "$build_mode" == "runtime" ]; then
+    ./fix-libpaths.sh $MOUNTP
+fi
+
+# Execute the guest script to prepare dependencies
+echo "running guest script.."
+sudo chroot $MOUNTP /bin/bash -c "$LC_LOCALES cd /tmp ; ./piguest.sh $build_mode"
+echo "Guest script RC=$?"
+
+# Get QT5 sources and prepare them (this takes quite a long while to download)
+if [ ! -d "qt5" ]; then
+
+    echo ">>> Cloning QT5 sources and running init-repository from: $QT5_VERSION"
+
+    # We want to run configure each time we clone QT5 sources
+    if [ -f .configured ]; then
+	rm .configured
+    fi
+
+    # Clone QT5 sources, switch to latest stable tag
+    git clone --branch $QT5_VERSION git://gitorious.org/qt/qt5.git
+    pushd qt5
+    ./init-repository --no-webkit
+    popd
+fi
+
+# Start the build time counter
+time_start=$(date +"%s")
+
+# configure the build
+if [ ! -f .configured ] || [ "$is_configure" == "configure" ]; then
+
+    if [ "$build_mode" == "developer" ]; then
+        echo ">>> Running QT5 configure natively inside the image: ${!confopts}"
+        sudo chroot $MOUNTP /bin/bash -c "$LC_LOCALES MAKEFLAGS=-j$CPUS cd /tmp/qt5 ; ./configure ${!confopts}"
+    else
+        echo ">>> Running QT5 configure from the host system"
+        pushd qt5
+        ./configure ${!confopts}
+        popd
+    fi
+
+    touch .configured
+fi
+
+# Script parameter "configure" will avoid going through make & make install
+# specially useful when adding new core features or upgrading versions
+if [ "$is_configure" == "configure" ]; then
+    echo ">> Pibuild was called with 'configure' - stopping here (warn: the image is mounted)"
+    exit 0
+fi
+
+echo ">>> Building the big man!"
+if [ "$build_mode" == "developer" ]; then
+    echo ">>> Building QT5 natively - about 6 hours on a 8 core CPU - do you want to go dancing till dawn? you should!"
+    sudo chroot $MOUNTP /bin/bash -c "$LC_LOCALES cd /tmp/qt5 ; make -j $CPUS"
+    sudo chroot $MOUNTP /bin/bash -c "$LC_LOCALES cd /tmp/qt5 ; make install"
+else
+    echo ">>> Cross compiling QT5 now - about 40min on a 8 core CPU - would you like a coffee?"
+    pushd qt5
+    make -j $CPUS
+    sudo make install
+    popd
+fi
+
+echo ">>> Building QT Creator - about 2 hours on a 8 core CPU - Going for lunch, coffe and ice cream too.."
+git clone git://code.qt.io/qt-creator/qt-creator.git
+pushd qt-creator
+echo ">>> Switching QT Creator tag and applying patch to force using the native version of the Botan library"
+git checkout v3.4.0
+git apply ../patches/qt-creator-rpi.patch
+popd
+
+sudo chroot $MOUNTP /bin/bash -c "$LC_LOCALES cd /tmp/qt-creator ; /usr/local/picute/v5.4.1/bin/qmake USE_SYSTEM_BOTAN=1 -r ."
+sudo chroot $MOUNTP /bin/bash -c "$LC_LOCALES cd /tmp/qt-creator ; make --jobs=$CPUS"
+sudo chroot $MOUNTP /bin/bash -c "$LC_LOCALES cd /tmp/qt-creator ; make install"
+
+# unmount RaspberryPI image
+./imgmount umount $MOUNTP $NBD $RPIMAGE_TARGET
+
+# compute build time cost
+time_end=$(date +"%s")
+time_diff=$(($time_end-$time_start))
+
+echo "$(($time_diff / 60)) minutes and $(($time_diff % 60)) seconds elapsed."
+echo "PiCute for QT version $QT5_VERSION, mode $build_mode build finished"

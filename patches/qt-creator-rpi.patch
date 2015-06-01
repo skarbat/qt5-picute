@@ -1,0 +1,21 @@
+diff --git a/src/libs/3rdparty/botan/botan.pri b/src/libs/3rdparty/botan/botan.pri
+index b3a26e4..16fa7eb 100644
+--- a/src/libs/3rdparty/botan/botan.pri
++++ b/src/libs/3rdparty/botan/botan.pri
+@@ -4,7 +4,15 @@ HEADERS += $$PWD/botan.h
+ equals(USE_SYSTEM_BOTAN, 1) {
+     DEFINES += USE_SYSTEM_BOTAN
+     CONFIG += link_pkgconfig
+-    PKGCONFIG += botan-1.10
++
++    #PKGCONFIG += botan-1.10
++
++    # pkg-config --cflags botan-1.10
++    INCLUDEPATH += "/usr/include/botan-1.10"
++
++    # pkg-config --libs botan-1.10
++    LIBS += "-lbotan-1.10"
++
+ } else {
+ 
+ SOURCES += $$PWD/botan.cpp

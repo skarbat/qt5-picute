@@ -1,0 +1,44 @@
+#!/bin/bash
+#
+#  Mount and umount raspbian image
+#
+
+set -e
+
+SYNTAX="Syntax: imgmount < mount | umount > <mount point> <nbd device> <image>"
+
+COMMAND=$1
+MOUNTP=$2
+NBD=$3
+IMG=$4
+
+if [ "$COMMAND" == "mount" ]; then
+    mkdir -p $MOUNTP
+    sudo qemu-nbd -c $NBD $IMG
+    sudo mount "$NBD"p2 $MOUNTP
+    if [ ! -f $MOUNTP/etc/debian_version ]; then
+	echo "ups! image not mounted or not a Debian image"
+	exit 1
+    else
+        sudo mount --bind /proc $MOUNTP/proc
+        sudo mount --bind $(pwd) $MOUNTP/tmp
+        if [ ! -f $MOUNTP/tmp/imgmount ]; then
+            echo "WARNING: Could not make current directory available inside image /tmp"
+        fi
+
+	echo "mounted Debian image: `cat $MOUNTP/etc/debian_version`"
+	exit 0
+    fi    
+fi
+
+if [ "$COMMAND" == "umount" ]; then
+    sudo umount $MOUNTP/tmp  || /bin/true
+    sudo umount $MOUNTP/proc || /bin/true
+    sudo umount $MOUNTP
+    sudo qemu-nbd -d $NBD
+    rmdir $2
+    exit $?
+fi
+
+echo "Wrong number of parameters"
+echo "$SYNTAX"

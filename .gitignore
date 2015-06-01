@@ -12,3 +12,14 @@ Makefile.in
 /install-sh
 /missing
 /stamp-h1
+
+# emacs temporary files
+
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*

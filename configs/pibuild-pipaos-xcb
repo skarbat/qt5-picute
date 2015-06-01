@@ -1,0 +1,50 @@
+#!/bin/bash
+#
+#  Settings file to build QT5 inside pipaOS with X11 platform support.
+#
+
+# Put your preferred name suffix to the final picute image
+VERSION=picute-1.04
+
+# QT5 tag name to use (git tag -l to list available)
+QT5_VERSION=v5.4.1
+
+# Number of system CPUs plus 1, to boost build speed
+CPUS=9
+
+# build process logfile
+LOGFILE=build.log
+
+# The network path to the RaspberryPI Debian based OS image (in GZip format)
+RPIMAGE_SOURCE=http://pipaos.mitako.eu/download/pipaos-3.5-wheezy-xgui.img.gz
+
+# Complete pathname of the resulting image with QT5 installed
+RPIMAGE_TARGET=$(pwd)/$VERSION-qt$QT5_VERSION-$build_mode.img
+
+# Device name to map the image inside a NBD device
+# This macro will return user ID number minus 1000
+NBD="/dev/nbd$((`id -u`-1000))"
+
+# Path in the target image to install QT5
+PREFIX=/usr/local/picute/$QT5_VERSION
+
+# Mount point where the image will be accessed during the build
+MOUNTP=/tmp/picute-$(id -u)-rootfs
+
+# Path to install the cross compiler tools
+XCHAIN=/opt/rpi-tools
+
+#
+# Complete option set to pass to "configure" - Please declare both _developer and _runtime
+#
+configure_opts_developer="-opengl es2 -eglfs -xcb -device linux-rasp-pi-g++ -device-option CROSS_COMPILE=/usr/bin/ \
+-nomake tests -opensource -confirm-license \
+-prefix $PREFIX -no-pch -developer-build -debug -alsa -no-use-gold-linker \
+-qt-xkbcommon -xkb-config-root /usr/share/X11/xkb \
+-make libs -make examples -make tools -verbose -no-warnings-are-errors"
+
+configure_opts_runtime="-opengl es2 -eglfs -xcb -device linux-rasp-pi-g++ -device-option \
+CROSS_COMPILE=$XCHAIN/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/bin/arm-linux-gnueabihf- \
+-sysroot $MOUNTP -opensource -confirm-license -reduce-exports -release \
+-prefix $PREFIX -no-pch -alsa -no-use-gold-linker -qt-xkbcommon -xkb-config-root /usr/share/X11/xkb \
+-nomake tests -nomake examples -verbose -no-warnings-are-errors -no-qml-debug -optimized-qmake -strip"
