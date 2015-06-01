@@ -29,7 +29,7 @@ This tool has to run on an Intel based Debian or cousin system. Additionally it 
 A normal build using pipaOS can be built straight away like this:
 
 ```
-$ configs/pibuild-pipaos-xcb developer
+$ ./build-picute configs/pibuild-pipaos-xcb developer
 ```
 
 Change `developer` to `runtime` to build the QT5 libraries alone.
