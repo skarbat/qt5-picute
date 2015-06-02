@@ -22,7 +22,9 @@ This tool has to run on an Intel based Debian or cousin system. Additionally it 
  * access to a fast Internet connection
  * user account with password-less sudo permissions
  * A correctly Qemu static ARM emulator setup, and the following packages:
-   ** python 2.7, build-essential, qemu-utils, binfmt-support and libfreetype6
+  * python 2.7, build-essential, qemu-utils, binfmt-support and libfreetype6
+ * ARM Cross compiler (to built the runtime image)
+  *  Clone this repo into `/opt/rpi-tools`: git@github.com:raspberrypi/tools.git
 
 ### what do I have to do?
 
