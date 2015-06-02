@@ -111,6 +111,19 @@ if [ "$build_mode" == "developer" ]; then
     echo ">>> Building QT5 natively - about 6 hours on a 8 core CPU - do you want to go dancing till dawn? you should!"
     sudo chroot $MOUNTP /bin/bash -c "$LC_LOCALES cd /tmp/qt5 ; make -j $CPUS"
     sudo chroot $MOUNTP /bin/bash -c "$LC_LOCALES cd /tmp/qt5 ; make install"
+
+    # FIXME: Centralize hardcoded versions in the config file
+    echo ">>> Building QT Creator - about 2 hours on a 8 core CPU - Going for lunch, coffe and ice cream too.."
+    git clone git://code.qt.io/qt-creator/qt-creator.git
+    pushd qt-creator
+    echo ">>> Switching QT Creator tag and applying patch to force using the native version of the Botan library"
+    git checkout v3.4.0
+    git apply ../patches/qt-creator-rpi.patch
+    popd
+
+    sudo chroot $MOUNTP /bin/bash -c "$LC_LOCALES cd /tmp/qt-creator ; /usr/local/picute/v5.4.1/bin/qmake USE_SYSTEM_BOTAN=1 -r ."
+    sudo chroot $MOUNTP /bin/bash -c "$LC_LOCALES cd /tmp/qt-creator ; make --jobs=$CPUS"
+    sudo chroot $MOUNTP /bin/bash -c "$LC_LOCALES cd /tmp/qt-creator ; make install"
 else
     echo ">>> Cross compiling QT5 now - about 40min on a 8 core CPU - would you like a coffee?"
     pushd qt5
@@ -118,18 +131,6 @@ else
     sudo make install
     popd
 fi
-
-echo ">>> Building QT Creator - about 2 hours on a 8 core CPU - Going for lunch, coffe and ice cream too.."
-git clone git://code.qt.io/qt-creator/qt-creator.git
-pushd qt-creator
-echo ">>> Switching QT Creator tag and applying patch to force using the native version of the Botan library"
-git checkout v3.4.0
-git apply ../patches/qt-creator-rpi.patch
-popd
-
-sudo chroot $MOUNTP /bin/bash -c "$LC_LOCALES cd /tmp/qt-creator ; /usr/local/picute/v5.4.1/bin/qmake USE_SYSTEM_BOTAN=1 -r ."
-sudo chroot $MOUNTP /bin/bash -c "$LC_LOCALES cd /tmp/qt-creator ; make --jobs=$CPUS"
-sudo chroot $MOUNTP /bin/bash -c "$LC_LOCALES cd /tmp/qt-creator ; make install"
 
 # unmount RaspberryPI image
 ./imgmount umount $MOUNTP $NBD $RPIMAGE_TARGET
