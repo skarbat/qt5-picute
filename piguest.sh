@@ -28,7 +28,7 @@ echo "Installing the Xserver development libraries"
 export DEBIAN_FRONTEND=noninteractive
 
 dev_packages=" libc6-dev libxcb1-dev libxcb-icccm4-dev libxcb-xfixes0-dev libxcb-image0-dev libxcb-keysyms1-dev libxcomposite-dev \
-libxcb-sync0-dev libxcb-randr0-dev libx11-xcb-dev libxcb-render-util0-dev libxrender-dev libxext-dev libxcb-glx0-dev libssl-dev "
+libxcb-sync0-dev libxcb-randr0-dev libx11-xcb-dev libxcb-render-util0-dev libxrender-dev libxext-dev libxcb-glx0-dev libssl-dev libraspberrypi-dev "
 
 apt-get update
 apt-get install -q -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" xserver-xorg xserver-xorg-video-fbdev xvfb $dev_packages
