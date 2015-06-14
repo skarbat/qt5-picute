@@ -38,6 +38,10 @@ Change `developer` to `runtime` to build the QT5 libraries alone.
 
 Recommend to run it inside a screen session as this will take quite a long time.
 
+The native build (development) will take about 8 hours on a 4 CPU dual core system.
+
+On completion you can run `./debian-pkgs.py` on the host, to obtain 2 Debian packages, runtime and development.
+
 ### what next?
 
 Burn the image to an SD card and boot it on a RaspberryPI. QT5 will be available at `/usr/local/picute/v.5.4.1`
