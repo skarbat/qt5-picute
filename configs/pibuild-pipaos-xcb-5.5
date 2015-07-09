@@ -4,10 +4,10 @@
 #
 
 # Put your preferred name suffix to the final picute image
-VERSION=picute-1.03
+VERSION=picute-1.04
 
 # QT5 tag name to use (git tag -l to list available)
-QT5_VERSION=v5.4.1
+QT5_VERSION=5.5
 
 # Number of system CPUs plus 1, to boost build speed
 CPUS=9
@@ -37,13 +37,13 @@ XCHAIN=/opt/rpi-tools
 #
 # Complete option set to pass to "configure" - Please declare both _developer and _runtime
 #
-configure_opts_developer="-opengl es2 -eglfs -xcb -device linux-rasp-pi-g++ -device-option CROSS_COMPILE=/usr/bin/ \
+configure_opts_developer="-opengl es2 -eglfs -xcb -device linux-rasp-pi2-g++ -device-option CROSS_COMPILE=/usr/bin/ \
 -nomake tests -opensource -confirm-license \
 -prefix $PREFIX -no-pch -developer-build -debug -alsa -no-use-gold-linker \
 -qt-xkbcommon -xkb-config-root /usr/share/X11/xkb \
 -make libs -make examples -make tools -verbose -no-warnings-are-errors"
 
-configure_opts_runtime="-opengl es2 -eglfs -xcb -device linux-rasp-pi-g++ -device-option \
+configure_opts_runtime="-opengl es2 -eglfs -xcb -device linux-rasp-pi2-g++ -device-option \
 CROSS_COMPILE=$XCHAIN/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/bin/arm-linux-gnueabihf- \
 -sysroot $MOUNTP -opensource -confirm-license -reduce-exports -release \
 -prefix $PREFIX -no-pch -alsa -no-use-gold-linker -qt-xkbcommon -xkb-config-root /usr/share/X11/xkb \

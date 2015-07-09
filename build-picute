@@ -60,7 +60,7 @@ fi
 
 # Execute the guest script to prepare dependencies
 echo "running guest script.."
-sudo chroot $MOUNTP /bin/bash -c "$LC_LOCALES cd /tmp ; ./piguest.sh $build_mode"
+sudo chroot $MOUNTP /bin/bash -c "$LC_LOCALES cd /tmp ; ./piguest.sh $build_mode $PREFIX"
 echo "Guest script RC=$?"
 
 # Get QT5 sources and prepare them (this takes quite a long while to download)
@@ -74,7 +74,7 @@ if [ ! -d "qt5" ]; then
     fi
 
     # Clone QT5 sources, switch to latest stable tag
-    git clone --branch $QT5_VERSION git://gitorious.org/qt/qt5.git
+    git clone --branch $QT5_VERSION git://code.qt.io/qt/qt5.git
     pushd qt5
     ./init-repository --no-webkit
     popd
@@ -91,6 +91,7 @@ if [ ! -f .configured ] || [ "$is_configure" == "configure" ]; then
         sudo chroot $MOUNTP /bin/bash -c "$LC_LOCALES MAKEFLAGS=-j$CPUS cd /tmp/qt5 ; ./configure ${!confopts}"
     else
         echo ">>> Running QT5 configure from the host system"
+        echo "confopts: ${!confopts}"
         pushd qt5
         ./configure ${!confopts}
         popd

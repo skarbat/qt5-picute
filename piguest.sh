@@ -6,13 +6,19 @@
 #
 
 build_mode=$1
-mark_file="/etc/picute-bootstrapped"
+prefix=$2
+mark_file="/var/cache/picute-bootstrapped"
 
 echo "picute guest script running..."
 
 if [ `uname -m` != "armv7l" ]; then
     echo "Does not look like we are in a ARM jail - aborting"
     exit 1
+fi
+
+if [ -f "$mark_file" ]; then
+    echo "PiGuest has already been run - returning now"
+    exit 0
 fi
 
 echo "Setting hostname to picute-$build_mode"
@@ -28,7 +34,8 @@ echo "Installing the Xserver development libraries"
 export DEBIAN_FRONTEND=noninteractive
 
 dev_packages=" libc6-dev libxcb1-dev libxcb-icccm4-dev libxcb-xfixes0-dev libxcb-image0-dev libxcb-keysyms1-dev libxcomposite-dev \
-libxcb-sync0-dev libxcb-randr0-dev libx11-xcb-dev libxcb-render-util0-dev libxrender-dev libxext-dev libxcb-glx0-dev libssl-dev libraspberrypi-dev "
+libxcb-sync0-dev libxcb-randr0-dev libx11-xcb-dev libxcb-render-util0-dev libxrender-dev libxext-dev libxcb-glx0-dev \
+libssl-dev libraspberrypi-dev libfreetype6-dev libxi-dev libcap-dev"
 
 apt-get update
 apt-get install -q -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" xserver-xorg xserver-xorg-video-fbdev xvfb $dev_packages
@@ -56,8 +63,8 @@ fi
 cat >>/etc/bash.bashrc <<EOF
 
 # QT5 tools and libraries
-export LD_LIBRARY_PATH=/usr/local/picute/v5.4.1/lib
-export PATH=/usr/local/picute/v5.4.1/bin:$PATH
+export LD_LIBRARY_PATH=$prefix/lib
+export PATH=$prefix/bin:$PATH
 
 # hides mouse cursor
 export QT_QPA_EGLFS_HIDECURSOR=0
